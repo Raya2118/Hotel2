@@ -1,8 +1,10 @@
 from django.contrib import messages
 from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from .forms import (
@@ -26,13 +28,20 @@ def home(request):
 
 def login_page(request):
 	form = HotelLoginForm(request, data=request.POST if request.method == "POST" else None)
+	next_url = request.POST.get("next", request.GET.get("next", ""))
 	if request.method == "POST":
 		if form.is_valid():
 			login(request, form.get_user())
 			messages.success(request, "Signed in successfully.")
+			if next_url and url_has_allowed_host_and_scheme(
+				next_url,
+				allowed_hosts={request.get_host()},
+				require_https=request.is_secure(),
+			):
+				return redirect(next_url)
 			return redirect("home")
 		messages.error(request, "Please check your username and password.")
-	return render(request, "index.html", {"form": form})
+	return render(request, "index.html", {"form": form, "next": next_url})
 
 
 def register_user(request):
@@ -59,6 +68,7 @@ def logout_user(request):
 
 
 @require_POST
+@login_required
 def add_guest(request):
 	"""CREATE: validate the submitted form and save a new guest."""
 	form = GuestForm(request.POST)
@@ -75,6 +85,7 @@ def add_guest(request):
 	})
 
 
+@login_required
 def guest_list(request):
 	"""READ: get all guests and display them in the guest table."""
 	return render(request, "guest.html", {
@@ -84,6 +95,7 @@ def guest_list(request):
 	})
 
 
+@login_required
 def update_guest(request, pk):
 	"""UPDATE: find a guest, validate changed fields, and save the update."""
 	guest = get_object_or_404(Guest, pk=pk)
@@ -104,6 +116,7 @@ def update_guest(request, pk):
 
 
 @require_POST
+@login_required
 def delete_guest(request, pk):
 	"""DELETE: find the guest and delete it when no protected records use it."""
 	guest = get_object_or_404(Guest, pk=pk)
@@ -117,6 +130,7 @@ def delete_guest(request, pk):
 
 
 @require_POST
+@login_required
 def add_staff(request):
 	"""CREATE: validate the submitted form and save a new staff member."""
 	form = StaffForm(request.POST)
@@ -133,6 +147,7 @@ def add_staff(request):
 	})
 
 
+@login_required
 def staff_list(request):
 	"""READ: get all staff members and display them in the staff table."""
 	return render(request, "staff.html", {
@@ -142,6 +157,7 @@ def staff_list(request):
 	})
 
 
+@login_required
 def update_staff(request, pk):
 	"""UPDATE: find a staff member, validate changed fields, and save the update."""
 	staff_member = get_object_or_404(Staff, pk=pk)
@@ -162,6 +178,7 @@ def update_staff(request, pk):
 
 
 @require_POST
+@login_required
 def delete_staff(request, pk):
 	"""DELETE: find the staff member and remove it from the database."""
 	staff_member = get_object_or_404(Staff, pk=pk)
@@ -171,6 +188,7 @@ def delete_staff(request, pk):
 
 
 @require_POST
+@login_required
 def add_room_type(request):
 	"""CREATE: validate the submitted form and save a new room type."""
 	form = RoomTypeForm(request.POST)
@@ -187,6 +205,7 @@ def add_room_type(request):
 	})
 
 
+@login_required
 def room_type_list(request):
 	"""READ: get all room types and display them in the room type table."""
 	return render(request, "roomtype.html", {
@@ -196,6 +215,7 @@ def room_type_list(request):
 	})
 
 
+@login_required
 def update_room_type(request, pk):
 	"""UPDATE: find a room type, validate changed fields, and save the update."""
 	room_type = get_object_or_404(RoomType, pk=pk)
@@ -216,6 +236,7 @@ def update_room_type(request, pk):
 
 
 @require_POST
+@login_required
 def delete_room_type(request, pk):
 	"""DELETE: find the room type and remove it if no rooms depend on it."""
 	room_type = get_object_or_404(RoomType, pk=pk)
@@ -229,6 +250,7 @@ def delete_room_type(request, pk):
 
 
 @require_POST
+@login_required
 def add_room(request):
 	"""CREATE: validate the submitted form and save a new room."""
 	form = RoomForm(request.POST)
@@ -245,6 +267,7 @@ def add_room(request):
 	})
 
 
+@login_required
 def room_list(request):
 	"""READ: get all rooms and display them in the room table."""
 	return render(request, "room.html", {
@@ -254,6 +277,7 @@ def room_list(request):
 	})
 
 
+@login_required
 def update_room(request, pk):
 	"""UPDATE: find a room, validate changed fields, and save the update."""
 	room = get_object_or_404(Room, pk=pk)
@@ -274,6 +298,7 @@ def update_room(request, pk):
 
 
 @require_POST
+@login_required
 def delete_room(request, pk):
 	"""DELETE: find the room and remove it if no reservations depend on it."""
 	room = get_object_or_404(Room, pk=pk)
@@ -287,6 +312,7 @@ def delete_room(request, pk):
 
 
 @require_POST
+@login_required
 def add_reservation(request):
 	"""CREATE: validate the submitted form and save a new reservation."""
 	form = ReservationForm(request.POST)
@@ -303,6 +329,7 @@ def add_reservation(request):
 	})
 
 
+@login_required
 def reservation_list(request):
 	"""READ: get all reservations and display them in the reservations table."""
 	return render(request, "reservation.html", {
@@ -312,6 +339,7 @@ def reservation_list(request):
 	})
 
 
+@login_required
 def update_reservation(request, pk):
 	"""UPDATE: find a reservation, validate changed fields, and save the update."""
 	reservation = get_object_or_404(Reservation, pk=pk)
@@ -332,6 +360,7 @@ def update_reservation(request, pk):
 
 
 @require_POST
+@login_required
 def delete_reservation(request, pk):
 	"""DELETE: find the reservation and remove it if no protected records use it."""
 	reservation = get_object_or_404(Reservation, pk=pk)
@@ -345,6 +374,7 @@ def delete_reservation(request, pk):
 
 
 @require_POST
+@login_required
 def add_service(request):
 	"""CREATE: validate the submitted form and save a new service."""
 	form = ServiceForm(request.POST)
@@ -361,6 +391,7 @@ def add_service(request):
 	})
 
 
+@login_required
 def service_list(request):
 	"""READ: get all services and display them in the services table."""
 	return render(request, "services.html", {
@@ -370,6 +401,7 @@ def service_list(request):
 	})
 
 
+@login_required
 def update_service(request, pk):
 	"""UPDATE: find a service, validate changed fields, and save the update."""
 	service = get_object_or_404(Service, pk=pk)
@@ -390,6 +422,7 @@ def update_service(request, pk):
 
 
 @require_POST
+@login_required
 def delete_service(request, pk):
 	"""DELETE: find the service and remove it if no bill details depend on it."""
 	service = get_object_or_404(Service, pk=pk)
@@ -403,6 +436,7 @@ def delete_service(request, pk):
 
 
 @require_POST
+@login_required
 def add_guest_bill(request):
 	"""CREATE: validate the submitted form and save a new guest bill."""
 	form = GuestBillForm(request.POST)
@@ -419,6 +453,7 @@ def add_guest_bill(request):
 	})
 
 
+@login_required
 def guest_bill_list(request):
 	"""READ: get all guest bills and display them in the guest bills table."""
 	return render(request, "guestbill.html", {
@@ -428,6 +463,7 @@ def guest_bill_list(request):
 	})
 
 
+@login_required
 def update_guest_bill(request, pk):
 	"""UPDATE: find a guest bill, validate changed fields, and save the update."""
 	bill = get_object_or_404(GuestBill, pk=pk)
@@ -448,6 +484,7 @@ def update_guest_bill(request, pk):
 
 
 @require_POST
+@login_required
 def delete_guest_bill(request, pk):
 	"""DELETE: find the guest bill and delete it, including its bill details."""
 	bill = get_object_or_404(GuestBill, pk=pk)
@@ -457,6 +494,7 @@ def delete_guest_bill(request, pk):
 
 
 @require_POST
+@login_required
 def add_bill_detail(request):
 	"""CREATE: validate the submitted form and save a new bill detail."""
 	form = BillDetailForm(request.POST)
@@ -473,6 +511,7 @@ def add_bill_detail(request):
 	})
 
 
+@login_required
 def bill_detail_list(request):
 	"""READ: get all bill details and display them in the bill details table."""
 	return render(request, "billdetails.html", {
@@ -482,6 +521,7 @@ def bill_detail_list(request):
 	})
 
 
+@login_required
 def update_bill_detail(request, pk):
 	"""UPDATE: find a bill detail, validate changed fields, and save the update."""
 	detail = get_object_or_404(BillDetail, pk=pk)
@@ -502,6 +542,7 @@ def update_bill_detail(request, pk):
 
 
 @require_POST
+@login_required
 def delete_bill_detail(request, pk):
 	"""DELETE: find the bill detail and remove it from the database."""
 	detail = get_object_or_404(BillDetail, pk=pk)
@@ -511,6 +552,7 @@ def delete_bill_detail(request, pk):
 
 
 @require_POST
+@login_required
 def add_payment(request):
 	"""CREATE: validate the submitted form and save a new payment."""
 	form = PaymentForm(request.POST)
@@ -527,6 +569,7 @@ def add_payment(request):
 	})
 
 
+@login_required
 def payment_list(request):
 	"""READ: get all payments and display them in the payments table."""
 	return render(request, "payment.html", {
@@ -536,6 +579,7 @@ def payment_list(request):
 	})
 
 
+@login_required
 def update_payment(request, pk):
 	"""UPDATE: find a payment, validate changed fields, and save the update."""
 	payment = get_object_or_404(Payment, pk=pk)
@@ -556,6 +600,7 @@ def update_payment(request, pk):
 
 
 @require_POST
+@login_required
 def delete_payment(request, pk):
 	"""DELETE: find the payment and remove it from the database."""
 	payment = get_object_or_404(Payment, pk=pk)

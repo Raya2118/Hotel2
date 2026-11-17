@@ -10,6 +10,7 @@
         <div class="LoginStyle">
             <form method="post" novalidate>
                 {% csrf_token %}
+                {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
                 {{ form.as_p }}
                 <button type="submit">Login</button>
             </form>

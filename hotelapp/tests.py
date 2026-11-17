@@ -16,6 +16,13 @@ from .models import (
 
 
 class HotelPageTests(TestCase):
+	def authenticate_test_user(self):
+		user = User.objects.create_user(
+			username="hotelguest",
+			password="T3al!SatelliteRiver#82",
+		)
+		self.client.force_login(user)
+
 	def test_logout_clears_session_and_redirects_home(self):
 		User.objects.create_user(
 			username="hotelguest",
@@ -74,6 +81,69 @@ class HotelPageTests(TestCase):
 		self.assertFalse(response.wsgi_request.user.is_authenticated)
 		self.assertContains(response, "Please check your username and password.")
 
+	def test_protected_page_returns_to_requested_page_after_login(self):
+		User.objects.create_user(
+			username="hotelguest",
+			password="T3al!SatelliteRiver#82",
+		)
+
+		response = self.client.get(reverse("guest"))
+
+		self.assertRedirects(
+			response,
+			f"{reverse('login')}?next={reverse('guest')}",
+			fetch_redirect_response=False,
+		)
+		response = self.client.post(
+			reverse("login"),
+			{
+				"username": "hotelguest",
+				"password": "T3al!SatelliteRiver#82",
+				"next": reverse("guest"),
+			},
+			follow=True,
+		)
+
+		self.assertRedirects(response, reverse("guest"))
+		self.assertTrue(response.wsgi_request.user.is_authenticated)
+
+	def test_unauthenticated_user_cannot_create_hotel_records(self):
+		response = self.client.post(
+			reverse("add_service"),
+			{
+				"service_id": "SV101",
+				"name": "Laundry",
+				"description": "Laundry service",
+				"cost": "15000",
+				"availability": Service.Availability.AVAILABLE,
+			},
+		)
+
+		self.assertRedirects(
+			response,
+			f"{reverse('login')}?next={reverse('add_service')}",
+			fetch_redirect_response=False,
+		)
+		self.assertFalse(Service.objects.filter(service_id="SV101").exists())
+
+	def test_login_rejects_external_next_url(self):
+		User.objects.create_user(
+			username="hotelguest",
+			password="T3al!SatelliteRiver#82",
+		)
+
+		response = self.client.post(
+			reverse("login"),
+			{
+				"username": "hotelguest",
+				"password": "T3al!SatelliteRiver#82",
+				"next": "https://example.com/",
+			},
+			follow=True,
+		)
+
+		self.assertRedirects(response, reverse("home"))
+
 	def test_registration_creates_user_signs_them_in_and_redirects_home(self):
 		response = self.client.post(
 			reverse("register"),
@@ -106,6 +176,7 @@ class HotelPageTests(TestCase):
 		self.assertFalse(User.objects.filter(username="hotelguest").exists())
 
 	def test_hotel_pages_render(self):
+		self.authenticate_test_user()
 		page_names = [
 			"home",
 			"login",
@@ -126,6 +197,7 @@ class HotelPageTests(TestCase):
 				self.assertEqual(response.status_code, 200)
 
 	def test_service_form_saves_and_shows_success_message(self):
+		self.authenticate_test_user()
 		response = self.client.post(
 			reverse("add_service"),
 			{
@@ -144,6 +216,7 @@ class HotelPageTests(TestCase):
 		self.assertContains(response, "SV100")
 
 	def test_invalid_service_form_does_not_save(self):
+		self.authenticate_test_user()
 		response = self.client.post(
 			reverse("add_service"),
 			{
@@ -160,6 +233,7 @@ class HotelPageTests(TestCase):
 		self.assertContains(response, "Please correct the errors in the form.")
 
 	def test_service_can_be_read_updated_and_deleted(self):
+		self.authenticate_test_user()
 		service = Service.objects.create(
 			service_id="SV102",
 			name="Laundry",
@@ -198,6 +272,7 @@ class HotelPageTests(TestCase):
 		self.assertContains(delete_response, "Service deleted successfully.")
 
 	def test_protected_record_cannot_be_deleted(self):
+		self.authenticate_test_user()
 		guest = Guest.objects.create(
 			guest_id="G100",
 			first_name="Ari",
@@ -242,6 +317,7 @@ class HotelPageTests(TestCase):
 		self.assertContains(response, "This guest cannot be deleted because it is still in use.")
 
 	def test_each_model_has_working_create_read_update_and_delete_pages(self):
+		self.authenticate_test_user()
 		records = [
 			(
 				"guest",

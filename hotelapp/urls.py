@@ -45,4 +45,5 @@ urlpatterns = [
     path("payment/add/", views.add_payment, name="add_payment"),
     path("payment/<str:pk>/update/", views.update_payment, name="update_payment"),
     path("payment/<str:pk>/delete/", views.delete_payment, name="delete_payment"),
+      
 ]

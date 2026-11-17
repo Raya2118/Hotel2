@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Hotel Management</title>
+    <link href="https://jsdelivr.net" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'dashboard' %}">Hotel Admin Dashboard</a>
+        <div class="d-flex align-items-center text-white">
+            <span class="me-3">Logged in as: <strong>{{ request.user.username }}</strong></span>
+            <a href="/admin/" class="btn btn-outline-light btn-sm me-2">Django Admin</a>
+            <a href="{% url 'logout' %}" class="btn btn-danger btn-sm">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container my-4">
+    <h3 class="mb-4">System Overview</h3>
+
+    <!-- Metric Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary h-100">
+                <div class="card-body">
+                    <h6 class="card-title">Total Paid Revenue</h6>
+                    <h3 class="mb-0">{{ total_revenue|floatformat:2 }}</h3>
+                    <small>Unpaid Bills: {{ unpaid_bills }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success h-100">
+                <div class="card-body">
+                    <h6 class="card-title">Rooms ({{ total_room_types }} Types)</h6>
+                    <h3 class="mb-0">{{ available_rooms }} / {{ total_rooms }} Available</h3>
+                    <small>Occupied: {{ occupied_rooms }} | Maint: {{ maintenance_rooms }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info h-100">
+                <div class="card-body">
+                    <h6 class="card-title">Reservations</h6>
+                    <h3 class="mb-0">{{ total_reservations }}</h3>
+                    <small>Confirmed: {{ confirmed_reservations }} | Pending: {{ pending_reservations }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark h-100">
+                <div class="card-body">
+                    <h6 class="card-title">People & Services</h6>
+                    <h3 class="mb-0">{{ total_guests }} Guests</h3>
+                    <small>Staff: {{ total_staff }} | Active Services: {{ total_services }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables -->
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white fw-bold">Recent Reservations</div>
+                <div class="card-body p-0">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Guest</th>
+                                <th>Room</th>
+                                <th>Check-In</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for res in recent_reservations %}
+                            <tr>
+                                <td>{{ res.reservation_id }}</td>
+                                <td>{{ res.guest.first_name }} {{ res.guest.last_name }}</td>
+                                <td>{{ res.room.room_number }}</td>
+                                <td>{{ res.check_in_date }}</td>
+                                <td><span class="badge bg-secondary">{{ res.status }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" class="text-center py-3">No reservations found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white fw-bold">Recent Payments</div>
+                <div class="card-body p-0">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Guest</th>
+                                <th>Amount</th>
+                                <th>Method</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pay in recent_payments %}
+                            <tr>
+                                <td>{{ pay.payment_id }}</td>
+                                <td>{{ pay.reservation.guest.first_name }} {{ pay.reservation.guest.last_name }}</td>
+                                <td>{{ pay.amount }}</td>
+                                <td>{{ pay.payment_method }}</td>
+                                <td><span class="badge bg-success">{{ pay.payment_status }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" class="text-center py-3">No payments found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
